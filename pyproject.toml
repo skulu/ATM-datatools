@@ -19,16 +19,11 @@ classifiers = [
 ]
 keywords = ["feed", "reader", "tutorial"]
 dependencies = [
-    "pandas <= 1.5.3",
-    "geopandas <= 0.12.2",
+    "pandas == 1.5.3",
+    "geopandas == 0.12.2",
+    "shapely == 2.0.1"
 ]
 requires-python = ">=3.9"
 
-[project.optional-dependencies]
-dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
-
 [project.urls]
 Homepage = "https://github.com/realpython/reader"
-
-[project.scripts]
-realpython = "reader.__main__:main"
