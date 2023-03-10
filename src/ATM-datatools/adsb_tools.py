@@ -18,11 +18,24 @@ def adsb_preprocessing(df_, datestr, downsample=0, floor=100, ceiling=0, radius=
     # Retain relevant columns only
     df = df[['073:071_073TimeforPos','131:Latitude','131:Longitude','140:GeometricHeight','170:TargetID']]
     new_columns = ['timeforpos','lat','lon','height','id']
-    df.dropna(inplace=True)
     df.columns = new_columns
+    df.dropna(inplace=True)
+
+    # Ensure right data type
+    df = df.astype({'timeforpos': float,
+                    'lat': float,
+                    'lon': float,
+                    'height': float,
+                    'id': object})
 
     # strip whitespace from ids
     df.id = df.id.apply(lambda x: x.strip())
+    
+    # drop rows with empty ids
+    df = df.loc[df.id.str.len() != 0]
+
+    # drop ids that only consist of 0
+    df = df.loc[~df['id'].str.contains('^0+$')]
 
     # only keep tracks above floor (in feet)
     if floor:
@@ -35,10 +48,7 @@ def adsb_preprocessing(df_, datestr, downsample=0, floor=100, ceiling=0, radius=
     # only keep tracks within this radius (in NM)
     # if radius:
     #     df=df.loc[]
-    
-    # drop rows with empty ids
-    df = df.loc[df.id.str.len() != 0]
-    
+      
     # get the date
     date = f'{datestr[0:4]}-{datestr[4:6]}-{datestr[6:8]}'
 
