@@ -93,22 +93,31 @@ def adsb_preprocessing(df_, datestr, downsample=0, floor=100, ceiling=0, radius=
     return df2
 
 
-def read_adsb_byairport(fname, airport, arrdep=0, downsample=0, floor=100, ceiling=0, radius=0):
+def read_adsb_byairport(fname, airport, **kwargs):
     """
     Returns a GeoPandas dataframe with flight tracks filtered by airport, with additional parameters for filtering.
 
     Parameters:
         fname: the filename of the adsb csv file
         airport: accepts 'WSSS', 'WSSL'
-        [Optional] arrdep: accepts 'arr' or 'dep' to filter for arriving or departing flights.
-        [Optional] downsample: downsample the track data, e.g. 2 will take every 2nd point in the track data
-        [Optional] floor: cuts off tracks below this altitude in feet
-        [Optional] ceiling: cuts off tracks above this altitude in feet
-        [Optional] radius: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
+        [Optional] arrdep = 0: accepts 'arr' or 'dep' to filter for arriving or departing flights, default value of 0 will keep all flights.
+        [Optional] downsample = 0: downsample the track data, e.g. 2 will take every 2nd point in the track data
+        [Optional] floor = 100: cuts off tracks below this altitude in feet
+        [Optional] ceiling = 0: cuts off tracks above this altitude in feet
+        [Optional - future feature] radius = 0: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
     
     Returns:
         df_geo (GeoPandas dataframe): GeoPandas dataframe with flight tracks filtered by the parameters
     """
+
+    # Process kwargs
+    arrdep = kwargs.get('arrdep', 0)
+    downsample = kwargs.get('downsample', 0)
+    floor = kwargs.get('floor', 100)
+    ceiling = kwargs.get('ceiling', 0)
+    radius = kwargs.get('radius', 0)
+
+    # Read file
     df = pd.read_csv(fname)
     datestr = os.path.basename(fname)[0:8]
     df = adsb_preprocessing(df, datestr, downsample, floor, ceiling, radius)
@@ -134,18 +143,24 @@ def read_adsb_byairport(fname, airport, arrdep=0, downsample=0, floor=100, ceili
     return df_geo
 
 
-def read_adsb_byflightid(fname, flightid, downsample=0, floor=100, ceiling=0, radius=0):
+def read_adsb_byflightid(fname, flightid, **kwargs):
     """
     Returns a GeoPandas dataframe with flight tracks filtered by flightid, with additional parameters for filtering.
 
     Parameters:
         fname: the filename of the adsb csv file
         flightid: the flightid of interest
-        [Optional] downsample: downsample the track data, e.g. 2 will take every 2nd point in the track data
-        [Optional] floor: cuts off tracks below this altitude in feet
-        [Optional] ceiling: cuts off tracks above this altitude in feet
-        [Optional] radius: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
+        [Optional] downsample = 0: downsample the track data, e.g. 2 will take every 2nd point in the track data
+        [Optional] floor = 100: cuts off tracks below this altitude in feet
+        [Optional] ceiling = 0: cuts off tracks above this altitude in feet
+        [Optional - future feature] radius = 0: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
     """
+    # Process kwargs
+    downsample = kwargs.get('downsample', 0)
+    floor = kwargs.get('floor', 100)
+    ceiling = kwargs.get('ceiling', 0)
+    radius = kwargs.get('radius', 0)
+
     df = pd.read_csv(fname)
     datestr = os.path.basename(fname)[0:8]
     df = adsb_preprocessing(df, datestr, downsample, floor, ceiling, radius)
