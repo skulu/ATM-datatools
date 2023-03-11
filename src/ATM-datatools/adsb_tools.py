@@ -93,14 +93,14 @@ def adsb_preprocessing(df_, datestr, downsample=0, floor=100, ceiling=0, radius=
     return df2
 
 
-def read_adsb_byairport(fname, airport, arrdep, downsample=0, floor=100, ceiling=0, radius=0):
+def read_adsb_byairport(fname, airport, arrdep=0, downsample=0, floor=100, ceiling=0, radius=0):
     """
     Returns a GeoPandas dataframe with flight tracks filtered by airport, with additional parameters for filtering.
 
     Parameters:
         fname: the filename of the adsb csv file
         airport: accepts 'WSSS', 'WSSL'
-        [Optional] arrdep: accepts 'arr' or 'dep' to filter for arriving or departing flights
+        [Optional] arrdep: accepts 'arr' or 'dep' to filter for arriving or departing flights.
         [Optional] downsample: downsample the track data, e.g. 2 will take every 2nd point in the track data
         [Optional] floor: cuts off tracks below this altitude in feet
         [Optional] ceiling: cuts off tracks above this altitude in feet
@@ -134,22 +134,21 @@ def read_adsb_byairport(fname, airport, arrdep, downsample=0, floor=100, ceiling
     return df_geo
 
 
-def read_adsb_byflightid(fname, flightid, downsample=0, floor=0, ceiling=0, radius=0):
+def read_adsb_byflightid(fname, flightid, downsample=0, floor=100, ceiling=0, radius=0):
     """
     Returns a GeoPandas dataframe with flight tracks filtered by flightid, with additional parameters for filtering.
 
     Parameters:
         fname: the filename of the adsb csv file
         flightid: the flightid of interest
-        [Optional] arrdep: accepts 'arr' or 'dep' to filter for arriving or departing flights
         [Optional] downsample: downsample the track data, e.g. 2 will take every 2nd point in the track data
         [Optional] floor: cuts off tracks below this altitude in feet
         [Optional] ceiling: cuts off tracks above this altitude in feet
         [Optional] radius: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
     """
     df = pd.read_csv(fname)
-    dte = os.path.basename(fname)[0:8]
-    df = adsb_preprocessing(df, dte, downsample, floor, ceiling, radius)
+    datestr = os.path.basename(fname)[0:8]
+    df = adsb_preprocessing(df, datestr, downsample, floor, ceiling, radius)
 
     # filter for flights
     df = df.loc[df['id'].str.contains(flightid)]
@@ -172,8 +171,12 @@ def WSSS_arrdep(p, arrdep):
         if (103.9 <= p.coords[0][0] <= 104.1) and (1.3 <= p.coords[0][1] <= 1.4):
             return True
         return False
+    elif arrdep == 0:
+        if ((103.9 <= p.coords[-1][0] <= 104.1) and (1.3 <= p.coords[-1][1] <= 1.4)) or ((103.9 <= p.coords[0][0] <= 104.1) and (1.3 <= p.coords[0][1] <= 1.4)):
+            return True
+        return False
     else:
-        raise ValueError('Did not specify arrival or departure correctly, use "arr" or "dep".')
+        raise ValueError('Did not specify arrival or departure correctly, use "arr" or "dep". Or leave blank to select all flights.')
 
 def WSSL_arrdep(p, arrdep):
     # coords to get first [0] and last [-1] point of track
@@ -186,5 +189,9 @@ def WSSL_arrdep(p, arrdep):
         if (103.86 <= p.coords[0][0] <= 103.88) and (1.40 <= p.coords[0][1] <= 1.43):
             return True
         return False
+    elif arrdep == 0:
+        if ((103.86 <= p.coords[-1][0] <= 103.88) and (1.40 <= p.coords[-1][1] <= 1.43)) or ((103.86 <= p.coords[0][0] <= 103.88) and (1.40 <= p.coords[0][1] <= 1.43)):
+            return True
+        return False
     else:
-        raise ValueError('Did not specify arrival or departure correctly, use "arr" or "dep".')
+        raise ValueError('Did not specify arrival or departure correctly, use "arr" or "dep". Or leave blank to select all flights.')
