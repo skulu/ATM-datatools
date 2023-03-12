@@ -1,4 +1,3 @@
-
-src/ATM-datatools/testing.ipynb
-src/ATM-datatools/viz_config.py
-src/ATM-datatools/__pycache__
+src/ATM_datatools/testing.ipynb
+src/ATM_datatools/viz_config.py
+src/ATM_datatools/__pycache__

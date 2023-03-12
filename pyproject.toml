@@ -5,7 +5,7 @@ requires      = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ATM-datatools"
+name = "atm_datatools"
 version = "0.0.1"
 description = "Tools for air traffic data analysis"
 readme = "README.md"
