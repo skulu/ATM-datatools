@@ -12,12 +12,12 @@ readme = "README.md"
 authors = [{ name = "Skyler Tan", email = "shiuhtan123@gmail.com" }]
 license = { file = "LICENSE" }
 classifiers = [
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Development Status :: 2 - Pre-Alpha"
 ]
-keywords = ["feed", "reader", "tutorial"]
+keywords = ["air", "traffic", "management", "ADSB", "ADS-B"]
 dependencies = [
     "pandas >= 1.5.3",
     "geopandas >= 0.12.2",
