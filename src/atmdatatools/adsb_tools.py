@@ -63,9 +63,10 @@ def read_adsb(fname, datestr, **kwargs):
     # if radius:
     #     df=df.loc[]
       
-    # get the date (date1 is the previous day, due to timezone)
-    date1 = f'{datestr[0:4]}-{datestr[4:6]}-{int(datestr[6:8])-1}'
+    # get the date (date1 is the previous day, due to timezone. date2 is the current day.)
     date2 = f'{datestr[0:4]}-{datestr[4:6]}-{datestr[6:8]}'
+    date1 = pd.to_datetime(date2) - pd.Timedelta(1, unit='day')
+    date1 = date1.strftime('%Y-%m-%d')
     
     # start index of new day
     dayidx = df.loc[df['timeforpos'] == df['timeforpos'].min()].index[0]
