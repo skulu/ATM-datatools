@@ -76,7 +76,7 @@ def read_adsb(fname, datestr, **kwargs):
     curr_day = pd.to_datetime(date2 + ' ' + df.loc[dayidx:,'timeforpos'].astype(str).apply(lambda x: x[0:8]))
     df['datetime'] = pd.concat([prev_day,curr_day])
     df['unix_timestamp'] = df['datetime'].apply(pd.Timestamp.timestamp)
-    
+
     # generate shapely points
     df['geometry'] = [Point(xyz) for xyz in zip(df['lon'], df['lat'], df['height'])]
     
@@ -111,6 +111,36 @@ def read_adsb(fname, datestr, **kwargs):
     df2 = gpd.GeoDataFrame(df2, crs='EPSG:4326')
 
     return df2
+
+
+def read_adsb_byflightid(fname, datestr, flightid, **kwargs):
+    """
+    Returns a GeoDataFrame with flight tracks filtered by flightid, with additional parameters for filtering.
+
+    Parameters:
+        fname: the filename of the adsb csv file
+        datestr: date in the format 'YYYYMMDD'
+        flightid: the flightid of interest
+        [Optional] downsample = None: downsample the track data, e.g. 2 will take every 2nd point in the track data
+        [Optional] floor = None: cuts off tracks below this altitude in feet
+        [Optional] ceiling = None: cuts off tracks above this altitude in feet
+    """
+    # Process kwargs
+    downsample = kwargs.get('downsample', None)
+    floor = kwargs.get('floor', None)
+    ceiling = kwargs.get('ceiling', None)
+    radius = kwargs.get('radius', None)
+
+    # Read file
+    df = read_adsb(fname, datestr, downsample=downsample, floor=floor, ceiling=ceiling, radius=radius)
+
+    # filter for flights
+    df = df.loc[df['id'].str.contains(flightid)]
+    df_geo = gpd.GeoDataFrame(df, crs='EPSG:4326')
+
+    df_geo.reset_index(drop=True, inplace=True)
+
+    return df_geo
 
 
 def read_adsb_byairport(fname, datestr, airport, **kwargs):
@@ -159,36 +189,6 @@ def read_adsb_byairport(fname, datestr, airport, **kwargs):
     df_geo = gpd.GeoDataFrame(df_geo, crs='EPSG:4326')
     df_geo = df_geo.reset_index()
     
-    return df_geo
-
-
-def read_adsb_byflightid(fname, datestr, flightid, **kwargs):
-    """
-    Returns a GeoDataFrame with flight tracks filtered by flightid, with additional parameters for filtering.
-
-    Parameters:
-        fname: the filename of the adsb csv file
-        datestr: date in the format 'YYYYMMDD'
-        flightid: the flightid of interest
-        [Optional] downsample = None: downsample the track data, e.g. 2 will take every 2nd point in the track data
-        [Optional] floor = None: cuts off tracks below this altitude in feet
-        [Optional] ceiling = None: cuts off tracks above this altitude in feet
-    """
-    # Process kwargs
-    downsample = kwargs.get('downsample', None)
-    floor = kwargs.get('floor', None)
-    ceiling = kwargs.get('ceiling', None)
-    radius = kwargs.get('radius', None)
-
-    # Read file
-    df = read_adsb(fname, datestr, downsample=downsample, floor=floor, ceiling=ceiling, radius=radius)
-
-    # filter for flights
-    df = df.loc[df['id'].str.contains(flightid)]
-    df_geo = gpd.GeoDataFrame(df, crs='EPSG:4326')
-
-    df_geo.reset_index(drop=True, inplace=True)
-
     return df_geo
 
 
