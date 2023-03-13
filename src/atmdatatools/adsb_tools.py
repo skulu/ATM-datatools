@@ -4,23 +4,29 @@
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import *
-import os
 
 ##---Main functions---##
-def read_adsb(fname, datestr, downsample=0, floor=100, ceiling=0, radius=0):
+def read_adsb(fname, datestr, **kwargs):
     """
-    Function for reading raw ADSB files, returning a df with the columns ['id','datetime','unix_timestamp','geometry'].
+    Function for reading raw ADSB files, returning a GeoDataFrame with the columns ['id','datetime','unix_timestamp','geometry']. Times are in UTC.
     The geometry column has Shapely point objects with lat, long, and altitude information.
     Increments the id of a position if a time gap of more than 15 minutes is detected. e.g. MEDIC77 becomes MEDIC77_1
     
     Parameters:
         fname: the filename of the adsb csv file
         datestr: date in the format 'YYYYMMDD'
-        [Optional] downsample = 0: downsample the track data, e.g. 2 will take every 2nd point in the track data
-        [Optional] floor = 100: cuts off tracks below this altitude in feet
-        [Optional] ceiling = 0: cuts off tracks above this altitude in feet
-        [Optional - future feature] radius = 0: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
+        [Optional] downsample = None: downsample the track data, e.g. 2 will take every 2nd point in the track data
+        [Optional] floor = None: cuts off tracks below this altitude in feet
+        [Optional] ceiling = None: cuts off tracks above this altitude in feet
+        [Optional - future feature] radius = None: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
     """
+    # kwargs
+    downsample = kwargs.get('downsample', None)
+    floor = kwargs.get('floor', None)
+    ceiling = kwargs.get('ceiling', None)
+    radius = kwargs.get('radius', None)
+
+    # read file
     df = pd.read_csv(fname)
     # Retain relevant columns only
     df = df[['073:071_073TimeforPos','131:Latitude','131:Longitude','140:GeometricHeight','170:TargetID']]
@@ -36,7 +42,8 @@ def read_adsb(fname, datestr, downsample=0, floor=100, ceiling=0, radius=0):
                     'id': object})
 
     # strip whitespace from ids
-    df.id = df.id.apply(lambda x: x.strip())
+    # df.id = df.id.apply(lambda x: x.strip())
+    df['id'] = df['id'].str.strip()
     
     # drop rows with empty ids
     df = df.loc[df.id.str.len() != 0]
@@ -56,16 +63,20 @@ def read_adsb(fname, datestr, downsample=0, floor=100, ceiling=0, radius=0):
     # if radius:
     #     df=df.loc[]
       
-    # get the date
-    date = f'{datestr[0:4]}-{datestr[4:6]}-{datestr[6:8]}'
-
-    # change timeforpos to readable format (string)
-    df['timeforpos'] = pd.to_datetime(df['timeforpos'], unit = 's').dt.time
+    # get the date (date1 is the previous day, due to timezone)
+    date1 = f'{datestr[0:4]}-{datestr[4:6]}-{int(datestr[6:8])-1}'
+    date2 = f'{datestr[0:4]}-{datestr[4:6]}-{datestr[6:8]}'
     
-    # datetime field and unix timestamp
-    df['datetime'] = pd.to_datetime(date + ' ' + df['timeforpos'].astype(str).apply(lambda x: x[0:8]))
-    df['unix_timestamp'] = df['datetime'].apply(pd.Timestamp.timestamp) 
+    # start index of new day
+    dayidx = df.loc[df['timeforpos'] == df['timeforpos'].min()].index[0]
 
+    # get datetime field and unix timestamp
+    df['timeforpos'] = pd.to_datetime(df['timeforpos'], unit = 's').dt.time
+    prev_day = pd.to_datetime(date1 + ' ' + df.loc[:dayidx-1,'timeforpos'].astype(str).apply(lambda x: x[0:8]))
+    curr_day = pd.to_datetime(date2 + ' ' + df.loc[dayidx:,'timeforpos'].astype(str).apply(lambda x: x[0:8]))
+    df['datetime'] = pd.concat([prev_day,curr_day])
+    df['unix_timestamp'] = df['datetime'].apply(pd.Timestamp.timestamp)
+    
     # generate shapely points
     df['geometry'] = [Point(xyz) for xyz in zip(df['lon'], df['lat'], df['height'])]
     
@@ -97,36 +108,38 @@ def read_adsb(fname, datestr, downsample=0, floor=100, ceiling=0, radius=0):
     df2 = df2[['id','datetime','unix_timestamp','geometry']]
 
     df2.reset_index(inplace=True, drop=True)
+    df2 = gpd.GeoDataFrame(df2, crs='EPSG:4326')
+
     return df2
 
 
 def read_adsb_byairport(fname, datestr, airport, **kwargs):
     """
-    Returns a GeoPandas dataframe with flight tracks filtered by airport, with additional parameters for filtering.
+    Returns a GeoDataFrame with flight tracks filtered by airport, with additional parameters for filtering.
 
     Parameters:
         fname: the filename of the adsb csv file
         datestr: date in the format 'YYYYMMDD'
         airport: accepts 'WSSS', 'WSSL'
-        [Optional] arrdep = 0: accepts 'arr' or 'dep' to filter for arriving or departing flights, default value of 0 will keep all flights.
-        [Optional] downsample = 0: downsample the track data, e.g. 2 will take every 2nd point in the track data
-        [Optional] floor = 100: cuts off tracks below this altitude in feet
-        [Optional] ceiling = 0: cuts off tracks above this altitude in feet
-        [Optional - future feature] radius = 0: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
+        [Optional] arrdep = None: accepts 'arr' or 'dep' to filter for arriving or departing flights, default value of 0 will keep all flights.
+        [Optional] downsample = None: downsample the track data, e.g. 2 will take every 2nd point in the track data
+        [Optional] floor = None: cuts off tracks below this altitude in feet
+        [Optional] ceiling = None: cuts off tracks above this altitude in feet
+        [Optional - future feature] radius = None: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
     
     Returns:
         df_geo (GeoPandas dataframe): GeoPandas dataframe with flight tracks filtered by the parameters
     """
 
     # kwargs
-    arrdep = kwargs.get('arrdep', 0)
-    downsample = kwargs.get('downsample', 0)
-    floor = kwargs.get('floor', 100)
-    ceiling = kwargs.get('ceiling', 0)
-    radius = kwargs.get('radius', 0)
+    arrdep = kwargs.get('arrdep', None)
+    downsample = kwargs.get('downsample', None)
+    floor = kwargs.get('floor', None)
+    ceiling = kwargs.get('ceiling', None)
+    radius = kwargs.get('radius', None)
 
     # Read file
-    df = read_adsb(fname, datestr, downsample, floor, ceiling, radius)
+    df = read_adsb(fname, datestr, downsample=downsample, floor=floor, ceiling=ceiling, radius=radius)
     
     # Organise into rows, each row is 1 flight and has a LineString representing the flightpath
     df_geo = df.groupby('id')['geometry'].apply(list)
@@ -151,25 +164,24 @@ def read_adsb_byairport(fname, datestr, airport, **kwargs):
 
 def read_adsb_byflightid(fname, datestr, flightid, **kwargs):
     """
-    Returns a GeoPandas dataframe with flight tracks filtered by flightid, with additional parameters for filtering.
+    Returns a GeoDataFrame with flight tracks filtered by flightid, with additional parameters for filtering.
 
     Parameters:
         fname: the filename of the adsb csv file
         datestr: date in the format 'YYYYMMDD'
         flightid: the flightid of interest
-        [Optional] downsample = 0: downsample the track data, e.g. 2 will take every 2nd point in the track data
-        [Optional] floor = 100: cuts off tracks below this altitude in feet
-        [Optional] ceiling = 0: cuts off tracks above this altitude in feet
-        [Optional - future feature] radius = 0: discard tracks outside this radius from airport in nautical miles (1 deg is 60NM)
+        [Optional] downsample = None: downsample the track data, e.g. 2 will take every 2nd point in the track data
+        [Optional] floor = None: cuts off tracks below this altitude in feet
+        [Optional] ceiling = None: cuts off tracks above this altitude in feet
     """
     # Process kwargs
-    downsample = kwargs.get('downsample', 0)
-    floor = kwargs.get('floor', 100)
-    ceiling = kwargs.get('ceiling', 0)
-    radius = kwargs.get('radius', 0)
+    downsample = kwargs.get('downsample', None)
+    floor = kwargs.get('floor', None)
+    ceiling = kwargs.get('ceiling', None)
+    radius = kwargs.get('radius', None)
 
     # Read file
-    df = read_adsb(fname, datestr, downsample, floor, ceiling, radius)
+    df = read_adsb(fname, datestr, downsample=downsample, floor=floor, ceiling=ceiling, radius=radius)
 
     # filter for flights
     df = df.loc[df['id'].str.contains(flightid)]
@@ -192,7 +204,7 @@ def WSSS_arrdep(p, arrdep):
         if (103.9 <= p.coords[0][0] <= 104.1) and (1.3 <= p.coords[0][1] <= 1.4):
             return True
         return False
-    elif arrdep == 0:
+    elif arrdep is None:
         if ((103.9 <= p.coords[-1][0] <= 104.1) and (1.3 <= p.coords[-1][1] <= 1.4)) or ((103.9 <= p.coords[0][0] <= 104.1) and (1.3 <= p.coords[0][1] <= 1.4)):
             return True
         return False
@@ -210,7 +222,7 @@ def WSSL_arrdep(p, arrdep):
         if (103.86 <= p.coords[0][0] <= 103.88) and (1.40 <= p.coords[0][1] <= 1.43):
             return True
         return False
-    elif arrdep == 0:
+    elif arrdep is None:
         if ((103.86 <= p.coords[-1][0] <= 103.88) and (1.40 <= p.coords[-1][1] <= 1.43)) or ((103.86 <= p.coords[0][0] <= 103.88) and (1.40 <= p.coords[0][1] <= 1.43)):
             return True
         return False
