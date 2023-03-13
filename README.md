@@ -5,7 +5,7 @@
 This package is available via PyPi:
 
 ```
-pip install atm-datatools
+pip install atmdatatools
 ```
 
 # Import
