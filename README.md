@@ -27,14 +27,14 @@ Returns a GeoDataFrame with the columns `['id','datetime','unix_timestamp','geom
 - **fname:** the filename of the adsb csv file
 - **datestr**: date string in the format 'YYYYMMDD'
 - [Optional] **downsample = None:** downsample the track data, e.g. 2 will take every 2nd point in the track data
-- [Optional] **floor = None:** cuts off tracks below this altitude in feet
+- [Optional] **floor = None:** cuts off tracks below this altitude in feet, recommend 100 feet if you wish to exclude ground movements
 - [Optional] **ceiling = None:** cuts off tracks above this altitude in feet
 
 ### Returns
-- **GeoDataFrame:** A GeoDataFrame with the columns `['id','datetime','unix_timestamp','geometry']`.
+- **GeoDataFrame:** A GeoDataFrame with the columns `['id','datetime','unix_timestamp','geometry']`
     - `id` contains the flight number (e.g. SIA92). Increments the id of a position if a time gap of more than 15 minutes is detected. e.g. MEDIC77 becomes MEDIC77_1.
     - Times are in UTC
-    - The `geometry` column has Shapely Point objects with lat, long, and altitude information.
+    - `geometry` column has Shapely Point objects with lat, long, and altitude information
     
 ## read_adsb_byairport()
 **`read_adsb_byairport(fname, datestr, airport, arrdep=None, downsample=None, floor=None, ceiling=None)`**
@@ -48,13 +48,13 @@ See the `read_adsb()` function documentation for raw ADSB file format.
 - **datestr**: date string in the format 'YYYYMMDD'
 - **airport**: Accepts ICAO airport codes, currently accepts `WSSS`, `WSSL`.
 - [Optional] **downsample = None:** downsample the track data, e.g. 2 will take every 2nd point in the track data
-- [Optional] **floor = None:** cuts off tracks below this altitude in feet
+- [Optional] **floor = None:** cuts off tracks below this altitude in feet, recommend 100 feet if you wish to exclude ground movements
 - [Optional] **ceiling = None:** cuts off tracks above this altitude in feet
 
 ### Returns
-- **GeoDataFrame:** A GeoDataFrame with the columns `['id','geometry']`. 
-    - `id` contains the flight number (e.g. SIA92)
-    - `geometry` in the returned GeoDataFrame contains a Shapely LineString representing the flight's flightpath
+- **GeoDataFrame:** A GeoDataFrame with the columns `['id','geometry']`
+    - `id` contains the flight number (e.g. SIA92). Increments the id of a position if a time gap of more than 15 minutes is detected. e.g. MEDIC77 becomes MEDIC77_1.
+    - `geometry` column contains a Shapely LineString representing the flight's flightpath
 
 ## read_adsb_byflightid()
 **`read_adsb_byflightid(fname, datestr, flightid, downsample=None, floor=None, ceiling=None)`**
@@ -68,10 +68,11 @@ See the `read_adsb()` function documentation for raw ADSB file format.
 - **datestr**: date string in the format 'YYYYMMDD'
 - **airport**: Accepts ICAO airport codes, currently accepts `WSSS`, `WSSL`.
 - [Optional] **downsample = None:** downsample the track data, e.g. 2 will take every 2nd point in the track data
-- [Optional] **floor = None:** cuts off tracks below this altitude in feet
+- [Optional] **floor = None:** cuts off tracks below this altitude in feet, recommend 100 feet if you wish to exclude ground movements
 - [Optional] **ceiling = None:** cuts off tracks above this altitude in feet
 
 ### Returns
-- **GeoDataFrame:** A GeoDataFrame with the columns `['id','geometry']`. 
-    - `id` contains the flight number (e.g. SIA92)
-    - `geometry` in the returned GeoDataFrame contains Shapely Point objects with lat, long, and altitude information
+- **GeoDataFrame:** A GeoDataFrame with the columns `['id','datetime','unix_timestamp','geometry']` 
+    - `id` contains the flight number (e.g. SIA92). Increments the id of a position if a time gap of more than 15 minutes is detected. e.g. MEDIC77 becomes MEDIC77_1.
+    - Times are in UTC
+    - `geometry` column has Shapely Point objects with lat, long, and altitude information
