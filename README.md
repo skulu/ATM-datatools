@@ -1,5 +1,5 @@
 # ATM Data Tools
- Tools for air traffic data analysis. The package currently consists of 3 functions for reading ADSB files.
+ Tools for air traffic data analysis. The package currently consists of 3 functions for reading ADSB files. A feature to allow filtering of track data by radius from an airport is WIP for the `read_adsb_byairport()` function.
 
 # Installation
 This package is available via PyPi:
