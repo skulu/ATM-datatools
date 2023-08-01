@@ -70,6 +70,7 @@ See the `read_adsb()` function documentation for raw ADSB file format.
 - **fname:** the filename of the adsb csv file
 - **datestr**: date string in the format 'YYYYMMDD'
 - **airport**: Accepts ICAO airport codes, currently accepts `WSSS`, `WSSL`.
+- [Optional] **arrdep = None:** filter for arrival ("arr") or departure ("dep") traffic or both (None)
 - [Optional] **downsample = None:** downsample the track data, e.g. 2 will take every 2nd point in the track data
 - [Optional] **floor = None:** cuts off tracks below this altitude in feet, recommend 100 feet if you wish to exclude ground movements
 - [Optional] **ceiling = None:** cuts off tracks above this altitude in feet
